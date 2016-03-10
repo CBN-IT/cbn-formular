@@ -13,7 +13,7 @@
         "cbn-misc": "git@bitbucket.org:cbn-it/cbn-misc#master",
         "cbn-file-upload": "git@bitbucket.org:cbn-it/cbn-file-upload#master",
         "cbn-tooltip": "git@bitbucket.org:cbn-it/cbn-tooltip#master",
-        "cbn-page-behavior": "git@bitbucket.org:cbn-it/cbn-page-behavior#master"
+        "cbn-main-page": "git@bitbucket.org:cbn-it/cbn-main-page#master"
     },
     "devDependencies": {}
 }
