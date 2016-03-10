@@ -1,0 +1,91 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-material/paper-material.html">
+
+<link rel="import" href="../cbn-grid/cbn-grid.html">>
+<link rel="import" href="../cbn-tooltip/cbn-tooltip.html">
+<link rel="import" href="../cbn-json-editor/cbn-json-editor.html">
+
+<link rel="import" href="../cbn-grid/cbn-app-styles.html">
+<link rel="import" href="../cbn-main-page/cbn-page-behavior.html">
+<link rel="import" href="../cbn-main-page/import-form-elements.html">
+
+<dom-module id="cbn-adauga-formular">
+	<template>
+		<style>
+			:host {
+			@apply(--layout-vertical);
+			@apply(--layout-flex);
+				flex: 1;
+				display: flex;
+			}
+		</style>
+		<style include="cbn-grid-shared-style"></style>
+		<style include="cbn-form-shared-style"></style>
+		<style include="cbn-app-styles"></style>
+		<cbn-json-editor model="{{currentModel}}" kinds='["client","cont","istoricClient"]' params='{{_setParams("namespace",namespace)}}'
+						 style="flex:1"></cbn-json-editor>
+		
+
+	</template>
+</dom-module>
+
+<script>
+	(function () {
+		Polymer({
+
+			is: 'cbn-adauga-formular',
+			behaviors: [
+				Cbn.facturi.pageBehavior
+			],
+			properties: {
+				dataRoute: {
+					type: String,
+					reflectToAttribute: true,
+					value: "/formular/adauga"
+				},
+				type: {
+					type: String,
+					value: "formular"
+
+				}
+			},
+			listeners: {},
+			ready: function () {
+				page('/' + this.type + '/adauga', function (cx, next) {
+					this.currentModel = {};
+					app.route = this.dataRoute;
+					app.routeSection = this.dataRoute;
+					cx.handled = true;
+					next();
+				}.bind(this));
+				page('/' + this.type + '/editeaza/:hash', function (cx, next) {
+					this.require(this.type, function () {
+						this.editeazaFormular.apply(this, [cx, next]);
+					}.bind(this));
+				}.bind(this));
+			},
+			editeazaFormular: function (cx, next) {
+				var hash = cx.params.hash;
+				var model = {};
+				this.listEntities.forEach(function (itm) {
+					if (itm._hash === hash) {
+						model = itm;
+					}
+				});
+				if (typeof model.json === "string") {
+//					model.json = JSON.parse(model.json);
+				}
+				this.currentModel = model;
+				app.route = this.dataRoute;
+				app.routeSection = this.dataRoute;
+				cx.handled = true;
+				next();
+			}
+		})
+	})();
+</script>

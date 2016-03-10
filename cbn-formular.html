@@ -1,0 +1,93 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-button/paper-button.html">
+
+<link rel="import" href="../cbn-table/cbn-data-table.html">
+<link rel="import" href="../cbn-misc/cbn-misc.html">
+<link rel="import" href="../cbn-file-upload/cbn-file-upload.html">
+<link rel="import" href="../cbn-tooltip/cbn-tooltip.html">
+
+
+<link rel="import" href="../cbn-grid/cbn-app-styles.html">
+<link rel="import" href="../cbn-main-page/cbn-page-behavior.html">
+
+<script src="coloane_formulare.js"></script>
+
+<dom-module id="cbn-formular">
+	<template>
+		<style>
+			:host {
+			@apply(--layout-vertical);
+			@apply(--layout-flex);
+			}
+		</style>
+		<style include="cbn-app-styles"></style>
+		<iron-ajax id="getAjax" url="/get/GetFormulare" handle-as="json" last-response="{{listEntities}}" params='{{_setParams("namespace", namespace)}}'></iron-ajax>
+		<cbn-data-table class="table flex"
+						items="{{listEntities}}"
+						columns="{{columnsFormulare}}"
+						params='{{_setParams("namespace",namespace,"type",type)}}'
+						on-cbn-table-row-dblclicked="editFromTable"
+						on-delete-row="onDeleteFormular">
+			<paper-button class="before save" style="margin: 0 10px;color:white;background-color: #B90404" on-click="formularNou">
+				<iron-icon icon="add-circle"></iron-icon>
+				Adauga
+			</paper-button>
+			<template class="buttons">
+				<span>
+					<paper-icon-button icon="icons:delete" on-tap="_throwEvent" data-event="delete-row" style="color:rgb(213, 0, 0);"></paper-icon-button>
+					<cbn-tooltip position="left">Stergere formular</cbn-tooltip>
+				</span>
+			</template>
+		</cbn-data-table>
+	</template>
+</dom-module>
+
+<script>
+	(function () {
+		Polymer({
+
+			is: 'cbn-formular',
+			behaviors: [
+				Cbn.facturi.pageBehavior,
+				Cbn.columns.formular
+			],
+			properties: {
+				dataRoute:{
+					type: String,
+					reflectToAttribute: true,
+					value: "/formular"
+				},
+				type:{
+					type:String,
+					value:"formular"
+				}
+			},
+			listeners: {},
+			ready: function () {
+				page('/' + this.type, function (cx, next) {
+					this.$.getAjax.generateRequest();
+					app.route = this.dataRoute;
+					app.routeSection = this.dataRoute;
+					cx.handled = true;
+					next();
+				}.bind(this));
+				this.listen(document, "cbn-require", "getRequirement");
+			},
+			hasRequirement: function(){
+				return this.get("listEntities") instanceof Array;
+			},
+			onDeleteFormular: function(event){
+				this.opendDialogDelete(
+					event.detail.item._hash,
+					"Esti sigur ca doresti sa stergi formularul "+event.detail.item["name"]+" ?");
+			}
+			
+		})
+	})();
+</script>
