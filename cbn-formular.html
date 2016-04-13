@@ -29,7 +29,7 @@
 		<style include="cbn-app-styles"></style>
 		<iron-ajax id="getAjax" url="/get/GetFormulare" handle-as="json" last-response="{{listEntities}}" params='{{_setParams("namespace", namespace)}}'></iron-ajax>
 		<cbn-data-table class="table flex"
-						items="{{listEntities}}"
+						items="{{listEntities.formulare}}"
 						columns="{{columnsFormulare}}"
 						params='{{_setParams("namespace",namespace,"type",type)}}'
 						on-cbn-table-row-dblclicked="editFromTable"
@@ -64,8 +64,12 @@
 					value: "/formular"
 				},
 				type:{
-					type:String,
+					type: String,
 					value:"formular"
+				},
+				listEntities: {
+					type: Object,
+					notify: true
 				}
 			},
 			listeners: {},
@@ -80,7 +84,7 @@
 				this.listen(document, "cbn-require", "getRequirement");
 			},
 			hasRequirement: function(){
-				return this.get("listEntities") instanceof Array;
+				return this.get("listEntities") instanceof Object;
 			},
 			onDeleteFormular: function(event){
 				this.opendDialogDelete(
