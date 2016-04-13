@@ -34,9 +34,10 @@
 						params='{{_setParams("namespace",namespace,"type",type)}}'
 						on-cbn-table-row-dblclicked="editFromTable"
 						on-delete-row="onDeleteFormular">
-			<paper-button class="before save" style="margin: 0 10px;color:white;background-color: #B90404" on-click="formularNou">
-				<iron-icon icon="add-circle"></iron-icon>
-				Adauga
+
+			<paper-button class="icon-btn blue before margin-left-right" on-click="formularNou">
+				<iron-icon icon="add-circle" class="icon-btn-icon"></iron-icon>
+				<span class="icon-btn-text">Adauga</span>
 			</paper-button>
 			<template class="buttons">
 				<span>
