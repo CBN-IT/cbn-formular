@@ -32,9 +32,6 @@
 				@apply(--layout-flex);
 				background-color: #f3f5f6;
 			}
-			cbn-sortable{
-				flex-shrink: 0;
-			}
 			.deal {
 				border: 1px #c2c8cd solid;
 				padding-right: 12px;
@@ -104,7 +101,7 @@
 		<iron-pages selected="{{tab}}" class="vertical layout flex">
 			<section class="vertical layout flex">
 				<div class="horizontal layout wrap" style="flex-shrink: 0;">
-					<cbn-sortable class="horizontal layout center" animation="150" group="{{groupOptionsHeader}}">
+					<cbn-sortable class="horizontal layout center" animation="150" group="{{groupOptionsHeader}}" style="flex-shrink: 0;">
 						<template is="dom-repeat" items="{{inputs}}">
 							<div class="head horizontal layout center">
 								{{item.label}}
@@ -115,7 +112,7 @@
 						<cbn-dynamic-form config="{{_configSablon}}"></cbn-dynamic-form>
 					</form>
 				</div>
-				<cbn-sortable sort="true" animation="150" on-end="_changedFormular" group="{{groupOptions}}" style="overflow-y: auto" on-add="addedInput">
+				<cbn-sortable sort="true" animation="150" on-end="_changedFormular" group="{{groupOptions}}" style="overflow-y: auto;min-height:40px" on-add="addedInput">
 					<template is="dom-repeat" items="{{formular.elements}}">
 						<div class$="deal horizontal layout center {{_computeClass(item)}}" on-dblclick="editInput">
 							<div class="flex label horizontal layout center">
@@ -207,7 +204,7 @@
 				formular: {
 					type: Object,
 					value: function () {
-						return [];
+						return {};
 					},
 					observer: "_changedFormular"
 				},
@@ -493,7 +490,7 @@
 								"info": "",
 								"className": "col-xs-3 col-sm-3 col-lg-3",
 								"validation": {
-									"required": true,
+									"required": false,
 									"number": {
 										"validate": false,
 										"type": ""
@@ -611,7 +608,7 @@
 								"info": "",
 								"className": "col-xs-3 col-sm-3 col-lg-3",
 								"validation": {
-									"required": true,
+									"required": false,
 									"number": {
 										"validate": true,
 										"type": "integer"
@@ -794,7 +791,7 @@
 								"multiple": true,
 								"className": "col-xs-3 col-sm-3 col-lg-3",
 								"validation": {
-									"required": true,
+									"required": false,
 									"number": {
 										"validate": false,
 										"type": "integer"
@@ -831,7 +828,7 @@
 								"info": "",
 								"className": "col-xs-3 col-sm-3 col-lg-3",
 								"validation": {
-									"required": true,
+									"required": false,
 									"number": {
 										"validate": false,
 										"type": ""
@@ -866,7 +863,7 @@
 								"info": "",
 								"className": "col-xs-3 col-sm-3 col-lg-3",
 								"validation": {
-									"required": true,
+									"required": false,
 									"number": {
 										"validate": false,
 										"type": ""
@@ -901,7 +898,7 @@
 								"info": "",
 								"className": "col-xs-3 col-sm-3 col-lg-3",
 								"validation": {
-									"required": true,
+									"required": false,
 									"number": {
 										"validate": false,
 										"type": ""
@@ -1019,7 +1016,7 @@
 								"info": "",
 								"className": "col-xs-3 col-sm-3 col-lg-3",
 								"validation": {
-									"required": true,
+									"required": false,
 									"number": {
 										"validate": false,
 										"type": ""
@@ -1193,7 +1190,7 @@
 									}
 								],
 								"validation": {
-									"required": true,
+									"required": false,
 									"number": {
 										"validate": false,
 										"type": ""
@@ -1265,7 +1262,7 @@
 								"addressRank": 3,
 								"className": "col-xs-3 col-sm-3 col-lg-3",
 								"validation": {
-									"required": true,
+									"required": false,
 									"minRank": 3,
 									"number": {
 										"validate": false,
@@ -1319,7 +1316,7 @@
 								"info": "",
 								"className": "col-xs-3 col-sm-3 col-lg-3",
 								"validation": {
-									"required": true,
+									"required": false,
 									"number": {
 										"validate": false,
 										"type": ""
@@ -1423,21 +1420,14 @@
 			observers: [
 				"changedDeals(listEntities)"
 			],
-			ready: function () {
-				page(this.dataRoute, function (cx, next) {
-					this.require(["campanie", "client"], function () {
-						app.route = this.dataRoute;
-						app.routeSection = this.dataRoute;
-						cx.handled = true;
-						next();
-					}.bind(this));
-				}.bind(this));
-				this.listen(document, "cbn-require", "getRequirement");
-			},
 			_changedFormEntity: function(){
 				if(!this._isEmpty(this.formEntity["json"])){
 					this.formular = JSON.parse(this.formEntity["json"]);
+				} else{
+					this.formular = {"elements": []};
+					this.set("formEntity.json",'{"elements":[]}')
 				}
+				this.tab = 0;
 			},
 			_changedFormular: function(){
 				this.$.formView.render(null,null,true);
@@ -1445,7 +1435,7 @@
 			},
 			_tabChanged: function(newTab, oldTab){
 				if (newTab == 2) {
-					this.$.contentSablon.focus();
+					this.async(function(){this.$.contentSablon.focus()});
 				} else if(oldTab == 2){
 					try {
 						this.formular = JSON.parse(this.$.contentSablon.editorValue);
@@ -1478,7 +1468,6 @@
 				this.index = event.model["index"];
 				this.edit = true;
 				this.formularInput = this.getFormInputType(model);
-				console.log(model["inputType"]);
 				this.currentModel = model;
 				this.$.dialog.open();
 				
@@ -1532,9 +1521,9 @@
 				if (event.detail.keyboardEvent != null) {
 					event.detail.keyboardEvent.preventDefault();
 					try {
-						this.set("formEntity.json", JSON.parse(this.$.contentSablon.editorValue));
+						var json = JSON.parse(this.$.contentSablon.editorValue);
+						this.formEntity["json"] = json;
 					} catch (e) {
-						this.tab = 1;
 						this.message("JSON-ul nu este valid","error");
 						return false;
 					}
