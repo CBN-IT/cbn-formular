@@ -1,0 +1,1584 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-icons/social-icons.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../cbn-grid/cbn-grid-styles.html">
+<link rel="import" href="../cbn-tooltip/cbn-tooltip.html">
+<link rel="import" href="../cbn-main-page/import-form-elements.html">
+<link rel="import" href="../cbn-data-source/cbn-data-source.html">
+<link rel="import" href="../paper-tabs/paper-tab.html">
+<link rel="import" href="../paper-tabs/paper-tabs.html">
+<link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../paper-dialog/paper-dialog.html">
+<link rel="import" href="../paper-dialog-scrollable/paper-dialog-scrollable.html">
+<link rel="import" href="../cbn-grid/cbn-app-styles.html">
+<link rel="import" href="../cbn-main-page/cbn-page-behavior.html">
+<link rel="import" href="../polymer-sortablejs/polymer-sortablejs.html">
+<link rel="import" href="../polymer-sortablejs/cbn-sortable.html">
+<link rel="import" href="../iron-pages/iron-pages.html">
+<link rel="import" href="../cbn-ace-editor/cbn-ace-editor.html">
+<link rel="import" href="../iron-a11y-keys/iron-a11y-keys.html">
+<link rel="import" href="../cbn-copy-clipboard/cbn-copy-clipboard-behavior.html">
+
+<dom-module id="cbn-form-editor">
+	<template>
+		<style>
+			:host {
+				@apply(--layout-vertical);
+				@apply(--layout-flex);
+				background-color: #f3f5f6;
+			}
+			cbn-sortable{
+				flex-shrink: 0;
+			}
+			.deal {
+				border: 1px #c2c8cd solid;
+				padding-right: 12px;
+				padding-left: 12px;
+				height: 36px;
+				border-radius: 10px;
+				background-color: #fff;
+				box-sizing: border-box;
+				display: inline;
+				overflow: hidden;
+				cursor: pointer;
+				font-size: 14px;
+				line-height: 18px;
+			}
+			.head{
+				border: 1px #fff solid;
+				padding-right: 12px;
+				padding-left: 12px;
+				height: 36px;
+				border-radius: 10px;
+				color: white;
+				background-color: #9e9e9e;
+				box-sizing: border-box;
+				font-weight: 600;
+				display: inline;
+				overflow: hidden;
+				cursor: pointer;
+				font-size: 14px;
+				line-height: 18px;
+			}
+			.new {
+				background-color: #9e9e9e;
+				color: white;
+				border: 1px #fff solid;
+			}
+			.deal-icon {
+				color: #1d67d4;
+			}
+
+			.buttons {
+				padding: 20px 24px;
+			}
+			.required{
+				color: #DD4B39;
+			}
+			.label{
+				font-weight: 600;
+			}
+			.small-btn{
+				background-color: transparent!important;
+			}
+			.save{
+				margin: 10px auto 10px 10px!important;
+			}
+		</style>
+		<style include="cbn-app-styles"></style>
+		<style include="iron-flex"></style>
+		<style include="cbn-grid-styles"></style>
+		<style include="cbn-form-shared-style"></style>
+		<iron-a11y-keys keys="ctrl+s" target="[[_target]]" on-keys-pressed="saveFormular" stop-keyboard-event-propagation="true"></iron-a11y-keys>
+		
+		<paper-tabs selected="{{tab}}">
+			<paper-tab>EDITOR</paper-tab>
+			<paper-tab>FORM</paper-tab>
+			<paper-tab>JSON</paper-tab>
+		</paper-tabs>
+		<iron-pages selected="{{tab}}" class="vertical layout flex">
+			<section class="vertical layout flex">
+				<div class="horizontal layout wrap" style="flex-shrink: 0;">
+					<cbn-sortable class="horizontal layout center" animation="150" group="{{groupOptionsHeader}}">
+						<template is="dom-repeat" items="{{inputs}}">
+							<div class="head horizontal layout center">
+								{{item.label}}
+							</div>
+						</template>
+					</cbn-sortable>
+					<form is="cbn-form" action="{{action}}" handleAs="json" model="{{formEntity}}" params='{{params}}' id="saveForm" method="post" on-cbn-form-response="savedForm">
+						<cbn-dynamic-form config="{{_configSablon}}"></cbn-dynamic-form>
+					</form>
+				</div>
+				<cbn-sortable sort="true" animation="150" on-end="_changedFormular" group="{{groupOptions}}" style="overflow-y: auto" on-add="addedInput">
+					<template is="dom-repeat" items="{{formular.elements}}">
+						<div class$="deal horizontal layout center {{_computeClass(item)}}" on-dblclick="editInput">
+							<div class="flex label horizontal layout center">
+								<paper-button class="small-btn color green" dialog-dismiss on-click="copyHtmlName">
+									<iron-icon icon="content-copy"></iron-icon>
+								</paper-button>
+								{{item.label}}
+							</div>
+							<div class="flex"><b>{{item.inputType}}</b> {{item.type}}</div>
+							<div class="required flex">
+								<template is="dom-if" if="{{_displayRequired(item)}}">
+									Required
+								</template>
+							</div>
+							<div>
+								<paper-button class="small-btn color grey" on-click="deleteInput">
+									<iron-icon icon="delete"></iron-icon>
+								</paper-button>
+							</div> 
+						</div>
+					</template>
+				</cbn-sortable>
+				<paper-button class="icon-btn background green save" on-click="saveFormular">
+					<iron-icon icon="check" class="icon-btn-icon"></iron-icon>
+					<span class="icon-btn-text">Save</span>
+				</paper-button>
+			</section>
+			<section class="vertical layout flex" style="background-color: white">
+				<form is="cbn-form"
+					  class="form-container">
+					<cbn-dynamic-form config="{{formular}}" id="formView"></cbn-dynamic-form>
+				</form>
+			</section>
+			<section class="vertical layout flex" style="position: relative;">
+				<cbn-ace-editor id="contentSablon"  mode="json" theme="crimson_editor" font-size="1em" value="{{formEntity.json}}"></cbn-ace-editor>
+			</section>
+		</iron-pages>
+		<!--<div class="header horizontal layout center">-->
+		<paper-dialog id="dialog" modal style="width:900px">
+			<div class="horizontal layout center">
+				<h2 class="flex">{{currentModel.label}}</h2>
+				<paper-button class="small-btn background red" dialog-dismiss on-click="cancelEdit">
+					<iron-icon icon="close"></iron-icon>
+				</paper-button>
+			</div>
+			<paper-dialog-scrollable>
+				<form is="cbn-form" id="form"
+					  class="form-container"
+					  model="{{currentModel}}">
+					<cbn-dynamic-form config="{{defaultDynamicForm}}"></cbn-dynamic-form>
+					<cbn-dynamic-form config="{{formularInput}}"></cbn-dynamic-form>
+				</form>
+			</paper-dialog-scrollable>
+			<div class="buttons">
+				<paper-button dialog-dismiss class="icon-btn background red margin-left-right" on-click="cancelEdit">
+					<iron-icon icon="close" class="icon-btn-icon"></iron-icon>
+					<span class="icon-btn-text">Cancel</span>
+				</paper-button>
+				<paper-button class="icon-btn background green margin-left-right" on-click="saveInput">
+					<iron-icon icon="check" class="icon-btn-icon"></iron-icon>
+					<span class="icon-btn-text">Save</span>
+				</paper-button>
+			</div>
+		</paper-dialog> 
+
+	</template>
+</dom-module>
+
+<script>
+	(function () {
+		Polymer({
+
+			is: 'cbn-form-editor',
+			behaviors: [
+				Cbn.facturi.pageBehavior,
+				Cbn.CopyClipboard
+			],
+			properties: {
+				dataRoute: {
+					type: String,
+					reflectToAttribute: true,
+					value: "/form"
+				},
+				type: {
+					type: String,
+					value: "form"
+
+				},
+				formular: {
+					type: Object,
+					value: function () {
+						return [];
+					},
+					observer: "_changedFormular"
+				},
+				groupOptions: {
+					type: Object,
+					value: {
+						name: 'advanced',
+						pull: true,
+						put: true
+					}
+				},
+				groupOptionsHeader: {
+					type: Object,
+					value: {
+						name: 'advanced',
+						pull: 'clone',
+						put: false
+					}
+				},
+				currentModel: {
+					type: Object,
+					value: {}
+				},
+				formEntity: {
+					type: Object,
+					value: {},
+					observer: "_changedFormEntity"
+				},
+				formularInput: {
+					type: Object
+				},
+				defaultDynamicForm: {
+					type: Object,
+					value: {
+						"elements": [
+							{
+								"label": "Label",
+								"type": "text",
+								"name": "label",
+								"format": "",
+								"dbType": "string",
+								"defaultValue": "",
+								"info": "",
+								"className": "col-xs-3 col-sm-3 col-lg-3",
+								"validation": {
+									"required": true,
+									"number": {
+										"validate": false,
+										"type": ""
+									},
+									"unique": false,
+									"email": false,
+									"cnp": false,
+									"cif": false,
+									"minLength": "",
+									"maxLength": "",
+									"min": "",
+									"max": ""
+								},
+								"autoValidate": true,
+								"floatingLabel": true
+							},
+							{
+								"label": "Name",
+								"type": "text",
+								"name": "name",
+								"format": "",
+								"dbType": "string",
+								"defaultValue": "",
+								"info": "",
+								"className": "col-xs-3 col-sm-3 col-lg-3",
+								"validation": {
+									"required": true,
+									"number": {
+										"validate": false,
+										"type": ""
+									},
+									"unique": false,
+									"email": false,
+									"cnp": false,
+									"cif": false,
+									"minLength": "",
+									"maxLength": "",
+									"min": "",
+									"max": ""
+								},
+								"autoValidate": true,
+								"floatingLabel": true
+							},
+							{
+								"type": "checkbox",
+								"label": "Required",
+								"name": "validation.required",
+								"multiple": false,
+								"defaultValue": false,
+								"info": "",
+								"className": "col-xs-3 col-sm-3 col-lg-3",
+								"validation": {
+									"required": false,
+									"minLength": "",
+									"maxLength": ""
+								},
+								"autoValidate": true,
+								"floatingLabel": true,
+								"alwaysShowChips": true
+							},
+							{
+								"type": "checkbox",
+								"label": "Floating label",
+								"name": "floatingLabel",
+								"multiple": false,
+								"defaultValue": true,
+								"info": "",
+								"className": "col-xs-3 col-sm-3 col-lg-3",
+								"validation": {
+									"required": false,
+									"minLength": "",
+									"maxLength": ""
+								},
+								"autoValidate": true,
+								"floatingLabel": true,
+								"alwaysShowChips": true
+							},
+							{
+								"type": "select",
+								"label": "Col-xs",
+								"name": "col-xs",
+								"multiple": false,
+								"defaultValue": "4",
+								"info": "",
+								"className": "col-xs-4 col-sm-4 col-lg-4",
+								"validation": {
+									"required": true,
+									"minLength": "",
+									"maxLength": ""
+								},
+								"autoValidate": true,
+								"options": ["1","2","3","4","5","6","7","8","9","10","11","12"],
+								"floatingLabel": true,
+								"alwaysShowChips": true
+							},
+							{
+								"type": "select",
+								"label": "Col-sm",
+								"name": "col-sm",
+								"multiple": false,
+								"defaultValue": "4",
+								"info": "",
+								"className": "col-xs-4 col-sm-4 col-lg-4",
+								"validation": {
+									"required": true,
+									"minLength": "",
+									"maxLength": ""
+								},
+								"autoValidate": true,
+								"options": ["1","2","3","4","5","6","7","8","9","10","11","12"],
+								"floatingLabel": true,
+								"alwaysShowChips": true
+							},
+							{
+								"type": "select",
+								"label": "Col-lg",
+								"name": "col-lg",
+								"multiple": false,
+								"defaultValue": "4",
+								"info": "",
+								"className": "col-xs-4 col-sm-4 col-lg-4",
+								"validation": {
+									"required": true,
+									"minLength": "",
+									"maxLength": ""
+								},
+								"autoValidate": true,
+								"options": ["1","2","3","4","5","6","7","8","9","10","11","12"],
+								"floatingLabel": true,
+								"alwaysShowChips": true
+							}
+						]
+					}
+				},
+				inputs: {
+					type: Array,
+					value: [
+						{
+							"name": "string",
+							"label": "String",
+							"form": {
+								"elements": [
+									{
+										"label": "Default value",
+										"type": "text",
+										"name": "defaultValue",
+										"format": "",
+										"dbType": "string",
+										"defaultValue": "",
+										"info": "",
+										"className": "col-xs-3 col-sm-3 col-lg-3",
+										"validation": {
+											"required": false,
+											"number": {
+												"validate": false,
+												"type": ""
+											},
+											"unique": false,
+											"email": false,
+											"cnp": false,
+											"cif": false,
+											"minLength": "",
+											"maxLength": "",
+											"min": "",
+											"max": ""
+										},
+										"autoValidate": true,
+										"floatingLabel": true
+									},
+									{
+										"type": "select",
+										"label": "Format",
+										"name": "format",
+										"multiple": false,
+										"defaultValue": "",
+										"info": "",
+										"className": "col-xs-3 col-sm-3 col-lg-3",
+										"validation": {
+											"required": false,
+											"minLength": "",
+											"maxLength": ""
+										},
+										"autoValidate": true,
+										"options": [
+											"capitalize",
+											"sentenceCase",
+											"upperCase",
+											"lowerCase"
+										],
+										"floatingLabel": true,
+										"alwaysShowChips": true
+									},
+									{
+										"label": "Min length",
+										"type": "text",
+										"name": "minLength",
+										"dbType": "double",
+										"className": "col-xs-3 col-sm-3 col-lg-3",
+										"defaultValue": "",
+										"validation": {
+											"required": false,
+											"number": {
+												"validate": true,
+												"type": "integer"
+											}
+										},
+										"autoValidate": true,
+										"floatingLabel": true
+									},
+									{
+										"label": "Max length",
+										"type": "text",
+										"name": "maxLength",
+										"dbType": "double",
+										"className": "col-xs-3 col-sm-3 col-lg-3",
+										"defaultValue": "",
+										"validation": {
+											"required": false,
+											"number": {
+												"validate": true,
+												"type": "integer"
+											}
+										},
+										"autoValidate": true,
+										"floatingLabel": true
+									}
+								]
+							},
+							"model": {
+								"label": "",
+								"type": "text",
+								"inputType": "string",
+								"name": "",
+								"format": "",
+								"dbType": "string",
+								"defaultValue": "",
+								"info": "",
+								"className": "col-xs-3 col-sm-3 col-lg-3",
+								"validation": {
+									"required": true,
+									"number": {
+										"validate": false,
+										"type": ""
+									},
+									"unique": false,
+									"email": false,
+									"cnp": false,
+									"cif": false,
+									"minLength": "",
+									"maxLength": "",
+									"min": "",
+									"max": ""
+								},
+								"autoValidate": true,
+								"floatingLabel": true
+							}
+						},
+						{
+							"name": "number",
+							"label": "Number",
+							"form": {
+								"elements": [
+									{
+										"label": "Default value",
+										"type": "text",
+										"name": "defaultValue",
+										"format": "",
+										"dbType": "string",
+										"defaultValue": "",
+										"info": "",
+										"className": "col-xs-3 col-sm-3 col-lg-3",
+										"validation": {
+											"required": false,
+											"number": {
+												"validate": false,
+												"type": ""
+											},
+											"unique": false,
+											"email": false,
+											"cnp": false,
+											"cif": false,
+											"minLength": "",
+											"maxLength": "",
+											"min": "",
+											"max": ""
+										},
+										"autoValidate": true,
+										"floatingLabel": true
+									},
+									{
+										"type": "select",
+										"label": "Type number",
+										"name": "number.type",
+										"multiple": false,
+										"defaultValue": "integer",
+										"info": "",
+										"className": "col-xs-3 col-sm-3 col-lg-3",
+										"validation": {
+											"required": true,
+											"minLength": "",
+											"maxLength": ""
+										},
+										"autoValidate": true,
+										"options": [
+											"integer",
+											"double"
+										],
+										"floatingLabel": true,
+										"alwaysShowChips": true
+									},
+									{
+										"label": "Max",
+										"type": "text",
+										"name": "max",
+										"dbType": "double",
+										"className": "col-xs-3 col-sm-3 col-lg-3",
+										"defaultValue": "",
+										"validation": {
+											"required": false,
+											"number": {
+												"validate": true,
+												"type": "double"
+											}
+										},
+										"autoValidate": true,
+										"floatingLabel": true
+									},
+									{
+										"label": "Min",
+										"type": "text",
+										"name": "min",
+										"dbType": "double",
+										"className": "col-xs-3 col-sm-3 col-lg-3",
+										"defaultValue": "",
+										"validation": {
+											"required": false,
+											"number": {
+												"validate": true,
+												"type": "double"
+											}
+										},
+										"autoValidate": true,
+										"floatingLabel": true
+									}
+								]
+							},
+							"model": {
+								"label": "",
+								"type": "text",
+								"inputType": "number",
+								"name": "",
+								"format": "",
+								"dbType": "long",
+								"defaultValue": "",
+								"info": "",
+								"className": "col-xs-3 col-sm-3 col-lg-3",
+								"validation": {
+									"required": true,
+									"number": {
+										"validate": true,
+										"type": "integer"
+									},
+									"unique": false,
+									"email": false,
+									"cnp": false,
+									"cif": false,
+									"minLength": "",
+									"maxLength": "",
+									"min": "",
+									"max": ""
+								},
+								"autoValidate": true,
+								"floatingLabel": true
+							}
+
+						},
+						{
+							"name": "select",
+							"label": "Select",
+							"form": {
+								"elements": [
+									{
+										"type": "checkbox",
+										"label": "Multiple",
+										"name": "multiple",
+										"multiple": false,
+										"defaultValue": true,
+										"info": "",
+										"className": "col-xs-2 col-sm-2 col-lg-2",
+										"validation": {
+											"required": true,
+											"minLength": "",
+											"maxLength": ""
+										},
+										"autoValidate": true,
+										"floatingLabel": true,
+										"alwaysShowChips": true
+									},
+									{
+										"type": "select",
+										"label": "Options",
+										"name": "options",
+										"multiple": true,
+										"defaultValue": "",
+										"info": "",
+										"freeText": true,
+										"className": "col-xs-10 col-sm-10 col-lg-10",
+										"validation": {
+											"required": false,
+											"minLength": "",
+											"maxLength": ""
+										},
+										"autoValidate": true,
+										"options": [
+										],
+										"floatingLabel": true,
+										"alwaysShowChips": true
+									},
+									{
+										"label": "Data source",
+										"type": "text",
+										"name": "dataSource",
+										"format": "",
+										"dbType": "string",
+										"defaultValue": "",
+										"info": "",
+										"className": "col-xs-4 col-sm-4 col-lg-4",
+										"validation": {
+											"required": false,
+											"number": {
+												"validate": false,
+												"type": ""
+											},
+											"unique": false,
+											"email": false,
+											"cnp": false,
+											"cif": false,
+											"minLength": "",
+											"maxLength": "",
+											"min": "",
+											"max": ""
+										},
+										"autoValidate": true,
+										"floatingLabel": true
+									},
+									{
+										"label": "Default value",
+										"type": "text",
+										"name": "defaultValue",
+										"format": "",
+										"dbType": "string",
+										"defaultValue": "",
+										"info": "",
+										"className": "col-xs-3 col-sm-3 col-lg-3",
+										"validation": {
+											"required": false,
+											"number": {
+												"validate": false,
+												"type": ""
+											},
+											"unique": false,
+											"email": false,
+											"cnp": false,
+											"cif": false,
+											"minLength": "",
+											"maxLength": "",
+											"min": "",
+											"max": ""
+										},
+										"autoValidate": true,
+										"floatingLabel": true
+									},
+									{
+										"label": "Item value property",
+										"type": "text",
+										"name": "itemValueProperty",
+										"format": "",
+										"dbType": "string",
+										"defaultValue": "",
+										"info": "",
+										"className": "col-xs-4 col-sm-4 col-lg-4",
+										"validation": {
+											"required": false,
+											"number": {
+												"validate": false,
+												"type": ""
+											},
+											"unique": false,
+											"email": false,
+											"cnp": false,
+											"cif": false,
+											"minLength": "",
+											"maxLength": "",
+											"min": "",
+											"max": ""
+										},
+										"autoValidate": true,
+										"floatingLabel": true
+									},
+									{
+										"label": "Item label property",
+										"type": "text",
+										"name": "itemLabelProperty",
+										"format": "",
+										"dbType": "string",
+										"defaultValue": "",
+										"info": "",
+										"className": "col-xs-4 col-sm-4 col-lg-4",
+										"validation": {
+											"required": false,
+											"number": {
+												"validate": false,
+												"type": ""
+											},
+											"unique": false,
+											"email": false,
+											"cnp": false,
+											"cif": false,
+											"minLength": "",
+											"maxLength": "",
+											"min": "",
+											"max": ""
+										},
+										"autoValidate": true,
+										"floatingLabel": true
+									}
+								]
+							},
+							"model": {
+								"label": "",
+								"type": "select",
+								"inputType": "select",
+								"name": "",
+								"format": "",
+								"dbType": "string",
+								"defaultValue": "",
+								"info": "",
+								"multiple": true,
+								"className": "col-xs-3 col-sm-3 col-lg-3",
+								"validation": {
+									"required": true,
+									"number": {
+										"validate": false,
+										"type": "integer"
+									},
+									"unique": false,
+									"email": false,
+									"cnp": false,
+									"cif": false,
+									"minLength": "",
+									"maxLength": "",
+									"min": "",
+									"max": ""
+								},
+								"options": [],
+								"dataSource": "",
+								"autoValidate": true,
+								"floatingLabel": true
+							}
+						},
+						{
+							"name": "cnp",
+							"label": "Cnp",
+							"form": {
+								"elements": []
+							},
+							"model": {
+								"label": "",
+								"type": "text",
+								"inputType": "cnp",
+								"name": "",
+								"format": "",
+								"dbType": "string",
+								"defaultValue": "",
+								"info": "",
+								"className": "col-xs-3 col-sm-3 col-lg-3",
+								"validation": {
+									"required": true,
+									"number": {
+										"validate": false,
+										"type": ""
+									},
+									"unique": false,
+									"email": false,
+									"cnp": true,
+									"cif": false,
+									"minLength": "",
+									"maxLength": "",
+									"min": "",
+									"max": ""
+								},
+								"autoValidate": true,
+								"floatingLabel": true
+							}
+						},
+						{
+							"name": "cif",
+							"label": "Cif",
+							"form": {
+								"elements": []
+							},
+							"model": {
+								"label": "",
+								"type": "text",
+								"inputType": "cif",
+								"name": "",
+								"format": "",
+								"dbType": "string",
+								"defaultValue": "",
+								"info": "",
+								"className": "col-xs-3 col-sm-3 col-lg-3",
+								"validation": {
+									"required": true,
+									"number": {
+										"validate": false,
+										"type": ""
+									},
+									"unique": false,
+									"email": false,
+									"cnp": false,
+									"cif": true,
+									"minLength": "",
+									"maxLength": "",
+									"min": "",
+									"max": ""
+								},
+								"autoValidate": true,
+								"floatingLabel": true
+							}
+						},
+						{
+							"name": "email",
+							"label": "Email",
+							"form": {
+								"elements": []
+							},
+							"model": {
+								"label": "",
+								"type": "text",
+								"inputType": "email",
+								"name": "",
+								"format": "",
+								"dbType": "string",
+								"defaultValue": "",
+								"info": "",
+								"className": "col-xs-3 col-sm-3 col-lg-3",
+								"validation": {
+									"required": true,
+									"number": {
+										"validate": false,
+										"type": ""
+									},
+									"unique": false,
+									"email": true,
+									"cnp": false,
+									"cif": false,
+									"minLength": "",
+									"maxLength": "",
+									"min": "",
+									"max": ""
+								},
+								"autoValidate": true,
+								"floatingLabel": true
+							}
+						},
+						{
+							"name": "date",
+							"label": "Date",
+							"form": {
+								"elements": [
+									{
+										"label": "Default value",
+										"type": "text",
+										"name": "defaultValue",
+										"format": "",
+										"dbType": "string",
+										"defaultValue": "+0d",
+										"info": "",
+										"className": "col-xs-3 col-sm-3 col-lg-3",
+										"validation": {
+											"required": false,
+											"number": {
+												"validate": false,
+												"type": ""
+											},
+											"unique": false,
+											"email": false,
+											"cnp": false,
+											"cif": false,
+											"minLength": "",
+											"maxLength": "",
+											"min": "",
+											"max": ""
+										},
+										"autoValidate": true,
+										"floatingLabel": true
+									},
+									{
+										"label": "Format",
+										"type": "text",
+										"name": "format",
+										"format": "",
+										"dbType": "string",
+										"defaultValue": "DD.MM.YYYY",
+										"info": "",
+										"className": "col-xs-3 col-sm-3 col-lg-3",
+										"validation": {
+											"required": true,
+											"number": {
+												"validate": false,
+												"type": ""
+											},
+											"unique": false,
+											"email": false,
+											"cnp": false,
+											"cif": false,
+											"minLength": "",
+											"maxLength": "",
+											"min": "",
+											"max": ""
+										},
+										"autoValidate": true,
+										"floatingLabel": true
+									},
+									{
+										"label": "Value format",
+										"type": "text",
+										"name": "valueFormat",
+										"format": "",
+										"dbType": "string",
+										"defaultValue": "YYYY-MM-DD",
+										"info": "",
+										"className": "col-xs-3 col-sm-3 col-lg-3",
+										"validation": {
+											"required": true,
+											"number": {
+												"validate": false,
+												"type": ""
+											},
+											"unique": false,
+											"email": false,
+											"cnp": false,
+											"cif": false,
+											"minLength": "",
+											"maxLength": "",
+											"min": "",
+											"max": ""
+										},
+										"autoValidate": true,
+										"floatingLabel": true
+									}
+								]
+							},
+							"model": {
+								"label": "",
+								"type": "date",
+								"inputType": "date",
+								"name": "",
+								"format": "DD.MM.YYYY",
+								"valueFormat": "YYYY-MM-DD",
+								"dbType": "string",
+								"defaultValue": "+0d",
+								"info": "",
+								"className": "col-xs-3 col-sm-3 col-lg-3",
+								"validation": {
+									"required": true,
+									"number": {
+										"validate": false,
+										"type": ""
+									},
+									"unique": false,
+									"email": false,
+									"cnp": false,
+									"cif": false,
+									"minLength": "",
+									"maxLength": "",
+									"min": "",
+									"max": ""
+								},
+								"autoValidate": true,
+								"floatingLabel": true
+							}
+						},
+						{
+							"name": "date-range",
+							"label": "Date range",
+							"form": {
+								"elements": [
+									{
+										"label": "Format",
+										"type": "text",
+										"name": "format",
+										"format": "",
+										"dbType": "string",
+										"defaultValue": "DD.MM.YYYY",
+										"info": "",
+										"className": "col-xs-3 col-sm-3 col-lg-3",
+										"validation": {
+											"required": true,
+											"number": {
+												"validate": false,
+												"type": ""
+											},
+											"unique": false,
+											"email": false,
+											"cnp": false,
+											"cif": false,
+											"minLength": "",
+											"maxLength": "",
+											"min": "",
+											"max": ""
+										},
+										"autoValidate": true,
+										"floatingLabel": true
+									},
+									{
+										"label": "Value format",
+										"type": "text",
+										"name": "valueFormat",
+										"format": "",
+										"dbType": "string",
+										"defaultValue": "YYYY-MM-DD",
+										"info": "",
+										"className": "col-xs-3 col-sm-3 col-lg-3",
+										"validation": {
+											"required": true,
+											"number": {
+												"validate": false,
+												"type": ""
+											},
+											"unique": false,
+											"email": false,
+											"cnp": false,
+											"cif": false,
+											"minLength": "",
+											"maxLength": "",
+											"min": "",
+											"max": ""
+										},
+										"autoValidate": true,
+										"floatingLabel": true
+									},
+									{
+										"type": "select",
+										"label": "Default value",
+										"name": "defaultValue",
+										"multiple": true,
+										"defaultValue": ["-0d","+1y"],
+										"info": "",
+										"className": "col-xs-3 col-sm-3 col-lg-3",
+										"validation": {
+											"required": false,
+											"minLength": "",
+											"maxLength": ""
+										},
+										"autoValidate": true,
+										"freeText": true,
+										"floatingLabel": true,
+										"alwaysShowChips": true
+									},
+									{
+										"type": "select",
+										"label": "Html names",
+										"name": "htmlNames",
+										"multiple": true,
+										"defaultValue": ["dataInceput","dataSfarsit"],
+										"info": "",
+										"className": "col-xs-3 col-sm-3 col-lg-3",
+										"validation": {
+											"required": true,
+											"minLength": "",
+											"maxLength": ""
+										},
+										"autoValidate": true,
+										"freeText": true,
+										"floatingLabel": true,
+										"alwaysShowChips": true
+									}
+								]
+							},
+							"model": {
+								"label": "",
+								"type": "date-range",
+								"inputType": "date-range",
+								"name": "",
+								"format": "DD.MM.YYYY",
+								"valueFormat": "YYYY-MM-DD",
+								"dbType": "dateRange",
+								"htmlNames": ["dataInceput","dataSfarsit"],
+								"noResetAfterPick": true,
+								"noCloseAfterPick": true,
+								"defaultValue": ["-0d","+1y"],
+								"info": "",
+								"className": "col-xs-3 col-sm-3 col-lg-3",
+								"sideButtons":[ "clear+text",
+									{
+										"icon": "date-range",
+										"label": "Un an",
+										"style": "color: #4285f4",
+										"date": [ "+0d", "+1y" ],
+										"referenceDate": "selected"
+									},
+									{
+										"icon": "date-range",
+										"label": "2 ani",
+										"style": "color: #4285f4",
+										"date": [ "+0d", "+2y" ],
+										"referenceDate": "selected"
+									},
+									{
+										"icon": "date-range",
+										"label": "5 ani",
+										"style": "color: #4285f4",
+										"date": [ "+0d", "+5y" ],
+										"referenceDate": "selected"
+									},
+									{
+										"icon": "date-range",
+										"label": "7 ani",
+										"style": "color: #4285f4",
+										"date": [ "+0d", "+7y" ],
+										"referenceDate": "selected"
+									},
+									{
+										"icon": "date-range",
+										"label": "8 ani",
+										"style": "color: #4285f4",
+										"date": [ "+0d", "+8y" ],
+										"referenceDate": "selected"
+									},
+									{
+										"icon": "date-range",
+										"label": "10 ani",
+										"style": "color: #4285f4",
+										"date": [ "+0d", "+10y" ],
+										"referenceDate": "selected"
+									}
+								],
+								"validation": {
+									"required": true,
+									"number": {
+										"validate": false,
+										"type": ""
+									},
+									"unique": false,
+									"email": false,
+									"cnp": false,
+									"cif": false,
+									"minLength": "",
+									"maxLength": "",
+									"min": "",
+									"max": ""
+								},
+								"autoValidate": true,
+								"floatingLabel": true
+							}
+						},
+						{
+							"name": "address",
+							"label": "Address",
+							"form": {
+								"elements": [
+									{
+										"label": "Address rank",
+										"type": "text",
+										"name": "addressRank",
+										"dbType": "long",
+										"className": "col-xs-3 col-sm-3 col-lg-3",
+										"defaultValue": 3,
+										"validation": {
+											"required": false,
+											"number": {
+												"validate": true,
+												"type": "integer"
+											}
+										},
+										"autoValidate": true,
+										"floatingLabel": true
+									},
+									{
+										"label": "Min rank",
+										"type": "text",
+										"name": "minRank",
+										"dbType": "long",
+										"className": "col-xs-3 col-sm-3 col-lg-3",
+										"defaultValue": 3,
+										"validation": {
+											"required": false,
+											"number": {
+												"validate": true,
+												"type": "integer"
+											}
+										},
+										"autoValidate": true,
+										"floatingLabel": true
+									}
+									
+								]
+							},
+							"model": {
+								"label": "",
+								"type": "address",
+								"inputType": "address",
+								"name": "",
+								"format": "",
+								"dbType": "address",
+								"defaultValue": "",
+								"info": "",
+								"addressRank": 3,
+								"className": "col-xs-3 col-sm-3 col-lg-3",
+								"validation": {
+									"required": true,
+									"minRank": 3,
+									"number": {
+										"validate": false,
+										"type": ""
+									},
+									"unique": false,
+									"email": true,
+									"cnp": false,
+									"cif": false,
+									"minLength": "",
+									"maxLength": "",
+									"min": "",
+									"max": ""
+								},
+								"autoValidate": true,
+								"floatingLabel": true
+							}
+						},
+						{
+							"name": "file",
+							"label": "File",
+							"form": {
+								"elements": [
+									{
+										"type": "checkbox",
+										"label": "Multiple",
+										"name": "multiple",
+										"multiple": false,
+										"defaultValue": true,
+										"info": "",
+										"className": "col-xs-3 col-sm-3 col-lg-3",
+										"validation": {
+											"required": true,
+											"minLength": "",
+											"maxLength": ""
+										},
+										"autoValidate": true,
+										"floatingLabel": true,
+										"alwaysShowChips": true
+									}
+								]
+							},
+							"model": {
+								"label": "",
+								"type": "file",
+								"inputType": "file",
+								"name": "",
+								"format": "",
+								"dbType": "string",
+								"defaultValue": "",
+								"info": "",
+								"className": "col-xs-3 col-sm-3 col-lg-3",
+								"validation": {
+									"required": true,
+									"number": {
+										"validate": false,
+										"type": ""
+									},
+									"unique": false,
+									"email": false,
+									"cnp": false,
+									"cif": true,
+									"minLength": "",
+									"maxLength": "",
+									"min": "",
+									"max": ""
+								},
+								"autoValidate": true,
+								"floatingLabel": true
+							}
+						},
+						{
+							"name": "checkbox",
+							"label": "Checkbox",
+							"form": {
+								"elements": []
+							},
+							"model": {
+								"label": "",
+								"type": "checkbox",
+								"inputType": "checkbox",
+								"name": "",
+								"format": "",
+								"dbType": "string",
+								"defaultValue": "",
+								"info": "",
+								"className": "col-xs-3 col-sm-3 col-lg-3",
+								"validation": {
+									"required": false,
+									"number": {
+										"validate": false,
+										"type": ""
+									},
+									"unique": false,
+									"email": false,
+									"cnp": false,
+									"cif": true,
+									"minLength": "",
+									"maxLength": "",
+									"min": "",
+									"max": ""
+								},
+								"autoValidate": true,
+								"floatingLabel": true
+							}
+						}
+					]
+				},
+				index:{
+					type:Number
+				},
+				edit:{
+					type:Boolean,
+					value: false
+				},
+				tab:{
+					type:Number,
+					value: 0,
+					observer:"_tabChanged"
+				},
+				_target: {
+					type: Object,
+					value: function () {
+						return this;
+					}
+				},
+				params: {
+					type:Object,
+					value: function(){
+						return {}
+					}
+				},
+				action: {
+					type: String,
+					value: '/save/Formular'
+				},
+				/**
+				 * The list of kinds to appear in the Entitate Dropdown
+				 */
+				kinds: {
+					type: Array,
+					value: function () {
+						return [];
+					},
+					observer: 'kindsChanged'
+				},
+				_configSablon: {
+					type: Object,
+					value: function () {
+						return {};
+					}
+				}
+			},
+			listeners: {},
+			observers: [
+				"changedDeals(listEntities)"
+			],
+			ready: function () {
+				page(this.dataRoute, function (cx, next) {
+					this.require(["campanie", "client"], function () {
+						app.route = this.dataRoute;
+						app.routeSection = this.dataRoute;
+						cx.handled = true;
+						next();
+					}.bind(this));
+				}.bind(this));
+				this.listen(document, "cbn-require", "getRequirement");
+			},
+			_changedFormEntity: function(){
+				if(!this._isEmpty(this.formEntity["json"])){
+					this.formular = JSON.parse(this.formEntity["json"]);
+				}
+			},
+			_changedFormular: function(){
+				this.$.formView.render(null,null,true);
+				this.set("formEntity.json", JSON.stringify(this.formular,null,"\t"));
+			},
+			_tabChanged: function(newTab, oldTab){
+				if (newTab == 2) {
+					this.$.contentSablon.focus();
+				} else if(oldTab == 2){
+					try {
+						this.formular = JSON.parse(this.$.contentSablon.editorValue);
+						this.set("formEntity.json", this.$.contentSablon.editorValue);
+					} catch (e) {
+						this.tab = 2;
+						this.message("JSON-ul nu este valid","error");
+					}
+					
+				}
+			},
+			addedInput: function(event){
+				if(event["oldIndex"] != undefined){
+					this.formularInput = this.inputs[event["oldIndex"]]["form"];
+					this.currentModel = JSON.parse(JSON.stringify(this.inputs[event["oldIndex"]]["model"]));
+					this.index = event["newIndex"];
+					this.edit = false;
+					this.$.dialog.open();
+				}
+			},
+			editInput: function(event){
+				var model = JSON.parse(JSON.stringify(event.model.item));
+				var regex= /\d?\d/g;
+				if(!this._isEmpty(model["className"])){
+					var array = model["className"].match(regex);
+					model["col-xs"] = array[0]; 
+					model["col-sm"] = array[1];
+					model["col-lg"] = array[2];
+				}
+				this.index = event.model["index"];
+				this.edit = true;
+				this.formularInput = this.getFormInputType(model);
+				console.log(model["inputType"]);
+				this.currentModel = model;
+				this.$.dialog.open();
+				
+			},
+			getFormInputType: function (model) {
+				var inputType = model["inputType"];
+				if(this._isEmpty(inputType)){
+					inputType =  model["type"];
+					var special = ["cnp","email","cnp"];
+					for(var i=0;i<special.length;i++){
+						if(model[special[i]]){
+							inputType = special[i];
+						}
+					}
+					if(model.validation != undefined && model.validation.number != undefined && model.validation.number.validate){
+						inputType = "number";
+					} else if(inputType == "text"){
+						inputType = "string";
+					}
+				}
+				model["inputType"] = inputType;
+				for(i=0;i<this.inputs.length;i++){
+					if(this.inputs[i]["name"] == inputType){
+						return this.inputs[i]["form"];
+					} 
+				}
+			},
+			saveInput: function(event){
+				if(this.$.form.validate()){
+					this.currentModel["className"] = "col-xs-" + this.currentModel["col-xs"] + " col-sm-" + this.currentModel["col-sm"] + " col-lg-" + this.currentModel["col-lg"];
+					this.splice("formular.elements",this.index,1,this.currentModel);
+					this._changedFormular();  
+					this.$.dialog.close();
+				} else {
+					this.message("Datele introduse nu sunt valide","error");
+				}
+			},
+			cancelEdit: function(){
+				if(!this.edit){
+					this.splice("formular.elements",this.index,1); 
+				}
+			},
+			copyHtmlName: function(event){
+				this.copyTextToClipboard(event.model.item["name"]);
+			},
+			deleteInput: function(){
+				this.splice("formular.elements",event.model.index,1);
+				this._changedFormular();
+			},
+			saveFormular: function(event){
+				if (event.detail.keyboardEvent != null) {
+					event.detail.keyboardEvent.preventDefault();
+					try {
+						this.set("formEntity.json", JSON.parse(this.$.contentSablon.editorValue));
+					} catch (e) {
+						this.tab = 1;
+						this.message("JSON-ul nu este valid","error");
+						return false;
+					}
+				}
+				this.$.saveForm.submit();
+			},
+			savedForm: function(){
+				this.message("Formularul a fost salvat");	
+			},
+			_computeClass: function(item){
+				if(item["form"] != undefined){
+					return "new";
+				}
+			},
+			_displayRequired: function(item){
+				return (item.validation!= undefined && (item.validation.required == "true" || item.validation.required));
+			},
+			kindsChanged: function(){
+				this._configSablon = {
+					"elements": [
+						{
+							"type": "select",
+							"element": "cbn-paper-select",
+							"label": "Tip formular",
+							"name": "name",
+							"search": false,
+							"multiple": false,
+							"info": "",
+							"database": "",
+							"property": "",
+							"className": "col-xs-12 col-sm-12 col-lg-12",
+							"validation": {
+								"required": true
+							},
+							"autoValidate": true,
+							"itemValueProperty": "value",
+							"options": this.kinds,
+							"floatingLabel": true,
+							"alwaysShowChips": true
+						}
+					]
+				};
+			}
+			
+		})
+	})();
+</script>

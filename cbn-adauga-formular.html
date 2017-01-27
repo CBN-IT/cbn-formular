@@ -14,6 +14,8 @@
 <link rel="import" href="../cbn-grid/cbn-app-styles.html">
 <link rel="import" href="../cbn-main-page/cbn-page-behavior.html">
 <link rel="import" href="../cbn-main-page/import-form-elements.html">
+<link rel="import" href="cbn-form-editor.html">
+
 
 <dom-module id="cbn-adauga-formular">
 	<template>
@@ -29,8 +31,8 @@
 		<style include="cbn-grid-styles"></style>
 		<style include="cbn-form-shared-style"></style>
 		<style include="cbn-app-styles"></style>
-		<cbn-json-editor model="{{currentModel}}" kinds="{{listEntities.kinds}}" params='{{_setParams("namespace",namespace)}}'
-						 style="flex:1"></cbn-json-editor>
+		<cbn-form-editor form-entity="{{currentModel}}" kinds="{{listEntities.kinds}}" params='{{_setParams("namespace",namespace)}}'
+						 style="flex:1"></cbn-form-editor>
 		
 
 	</template>
