@@ -949,6 +949,23 @@
 										"floatingLabel": true
 									},
 									{
+										"type": "checkbox",
+										"label": "With time",
+										"name": "withTime",
+										"multiple": false,
+										"defaultValue": false,
+										"info": "",
+										"className": "col-xs-3 col-sm-3 col-lg-3",
+										"validation": {
+											"required": false,
+											"minLength": "",
+											"maxLength": ""
+										},
+										"autoValidate": true,
+										"floatingLabel": true,
+										"alwaysShowChips": true
+									},
+									{
 										"label": "Format",
 										"type": "text",
 										"name": "format",
@@ -1014,6 +1031,7 @@
 								"dbType": "string",
 								"defaultValue": "+0d",
 								"info": "",
+								"withTime":false,
 								"className": "col-xs-3 col-sm-3 col-lg-3",
 								"validation": {
 									"required": false,
@@ -1065,6 +1083,23 @@
 										},
 										"autoValidate": true,
 										"floatingLabel": true
+									},
+									{
+										"type": "checkbox",
+										"label": "With time",
+										"name": "withTime",
+										"multiple": false,
+										"defaultValue": false,
+										"info": "",
+										"className": "col-xs-3 col-sm-3 col-lg-3",
+										"validation": {
+											"required": false,
+											"minLength": "",
+											"maxLength": ""
+										},
+										"autoValidate": true,
+										"floatingLabel": true,
+										"alwaysShowChips": true
 									},
 									{
 										"label": "Value format",
@@ -1139,6 +1174,7 @@
 								"format": "DD.MM.YYYY",
 								"valueFormat": "YYYY-MM-DD",
 								"dbType": "dateRange",
+								"withTime":false,
 								"htmlNames": ["dataInceput","dataSfarsit"],
 								"noResetAfterPick": true,
 								"noCloseAfterPick": true,
