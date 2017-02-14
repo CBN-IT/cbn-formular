@@ -14,7 +14,8 @@
         "cbn-file-upload": "CBN-IT/cbn-file-upload#master",
         "cbn-tooltip": "CBN-IT/cbn-tooltip#master",
         "cbn-main-page": "CBN-IT/cbn-main-page#master",
-        "cbn-json-editor": "CBN-IT/cbn-json-editor#master"
+        "cbn-json-editor": "CBN-IT/cbn-json-editor#master",
+        "polymer-sortablejs": "^0.1.3"
     },
     "devDependencies": {}
 }
